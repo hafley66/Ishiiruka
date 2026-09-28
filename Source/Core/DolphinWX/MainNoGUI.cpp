@@ -76,9 +76,6 @@ static Platform* platform;
 void Host_NotifyMapLoaded()
 {
 }
-void Host_RefreshDSPDebuggerWindow()
-{
-}
 
 static Common::Event updateMainFrameEvent;
 void Host_Message(int Id)
@@ -376,16 +373,21 @@ static Platform* GetPlatform()
 int main(int argc, char* argv[])
 {
 	int ch, help = 0;
+	std::string user_dir;
 	struct option longopts[] = { { "exec", no_argument, nullptr, 'e' },
+	{ "user", required_argument, nullptr, 'u' },
 	{ "help", no_argument, nullptr, 'h' },
 	{ "version", no_argument, nullptr, 'v' },
 	{ nullptr, 0, nullptr, 0 } };
 
-	while ((ch = getopt_long(argc, argv, "eh?v", longopts, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "eh?vu:", longopts, 0)) != -1)
 	{
 		switch (ch)
 		{
 		case 'e':
+			break;
+		case 'u':
+			user_dir = optarg;
 			break;
 		case 'h':
 		case '?':
@@ -415,7 +417,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	UICommon::SetUserDirectory("");  // Auto-detect user folder
+	UICommon::SetUserDirectory(user_dir);  // empty auto-detects; libmelee passes -u
 	UICommon::Init();
 
 	Core::SetOnStoppedCallback([]() { s_running.Clear(); });

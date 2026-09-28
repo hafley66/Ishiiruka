@@ -9,6 +9,9 @@
 
 #include "Common/CPUDetect.h"
 #include "Common/Intrinsics.h"
+#if defined(__aarch64__)
+#include "Common/sse2neon.h"
+#endif
 
 #include "VideoCommon/TextureDecoder.h"
 #ifdef _WIN32

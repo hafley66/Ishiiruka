@@ -133,8 +133,7 @@ void VideoBackend::InitBackendInfo()
 
 bool VideoBackend::Initialize(void* window_handle)
 {
-	if (window_handle == nullptr)
-		return false;
+	// Headless passes no window; cInterfaceEGL::Create falls back to a pbuffer or surfaceless context.
 
 	InitializeShared();
 	InitBackendInfo();

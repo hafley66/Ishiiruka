@@ -79,7 +79,7 @@ set(GUI_SRCS
 	WXInputBase.cpp
 	WxUtils.cpp)
 
-set(NOGUI_SRCS Main.cpp MainNoGUI.cpp)
+set(NOGUI_SRCS MainNoGUI.cpp)
 
 if(USE_X11)
 	set(GUI_SRCS ${GUI_SRCS} X11Utils.cpp)
@@ -131,20 +131,21 @@ if(GETTEXT_MSGMERGE_EXECUTABLE AND GETTEXT_MSGFMT_EXECUTABLE AND wxWidgets_FOUND
 	GETTEXT_CREATE_TRANSLATIONS(${CMAKE_SOURCE_DIR}/Languages/po/dolphin-emu.pot ${LINGUAS})
 endif()
 
+# Link SlippiRustExtensions in.
+#
+# (This doesn't feel perfect here, but truth be told I can't think offhand of
+# a better location for it at the moment.)
+set(RUST_FEATURES "")
+if(DIS_PLAYBACK)
+	set(RUST_FEATURES "playback")
+endif()
+
+corrosion_import_crate(MANIFEST_PATH ${CMAKE_SOURCE_DIR}/Externals/SlippiRustExtensions/Cargo.toml ${RUST_FEATURES})
+
 if(wxWidgets_FOUND)
 	add_executable("${DOLPHIN_EXE}" ${SRCS} ${GUI_SRCS})
 	target_link_libraries("${DOLPHIN_EXE}" ${LIBS} ${WXLIBS})
 
-	# Link SlippiRustExtensions in.
-	#
-	# (This doesn't feel perfect here, but truth be told I can't think offhand of
-	# a better location for it at the moment.)
-	set(RUST_FEATURES "")
-	if(DIS_PLAYBACK)
-		set(RUST_FEATURES "playback")
-	endif()
-
-	corrosion_import_crate(MANIFEST_PATH ${CMAKE_SOURCE_DIR}/Externals/SlippiRustExtensions/Cargo.toml ${RUST_FEATURES})
 	target_link_libraries("${DOLPHIN_EXE}" PUBLIC slippi_rust_extensions)
 
 	if(APPLE)
@@ -252,10 +253,16 @@ if(wxWidgets_FOUND)
 endif()
 
 # Only build -nogui binaries when ENABLE_HEADLESS is on
-if(USE_X11 AND ENABLE_HEADLESS)
+if(ENABLE_HEADLESS)
 	set(DOLPHIN_NOGUI_EXE ${DOLPHIN_EXE_BASE}-nogui)
-	add_executable(${DOLPHIN_NOGUI_EXE} ${SRCS} ${NOGUI_SRCS})
-	target_link_libraries(${DOLPHIN_NOGUI_EXE} ${LIBS} ${WXLIBS})
+	# Core Slippi code links against the wx frame, so the headless binary still carries the wx GUI sources.
+	find_package(wxWidgets REQUIRED COMPONENTS aui adv gl html core base)
+	include(${wxWidgets_USE_FILE})
+	set(NOGUI_GUI_SRCS ${GUI_SRCS})
+	list(REMOVE_ITEM NOGUI_GUI_SRCS Main.cpp)
+	add_executable(${DOLPHIN_NOGUI_EXE} ${SRCS} ${NOGUI_GUI_SRCS} ${NOGUI_SRCS} NoGuiStubs.cpp)
+	target_compile_definitions(${DOLPHIN_NOGUI_EXE} PRIVATE HAVE_WX=1)
+	target_link_libraries(${DOLPHIN_NOGUI_EXE} ${LIBS} ${wxWidgets_LIBRARIES} slippi_rust_extensions)
 	set(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} ${DOLPHIN_NOGUI_EXE})
 	install(TARGETS ${DOLPHIN_NOGUI_EXE} RUNTIME DESTINATION ${bindir})
 endif()

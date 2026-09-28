@@ -59,7 +59,8 @@ CPUCoreBase *InitJitCore(int core)
 #endif
 #if _M_ARM_64
 	case PowerPC::CORE_JITARM64:
-		ptr = new JitArm64();
+		// The fork JitArm64 does not compile on arm64; the cached interpreter runs instead.
+		ptr = new CachedInterpreter();
 		break;
 #endif
 	case PowerPC::CORE_CACHEDINTERPRETER:
@@ -89,7 +90,7 @@ void InitTables(int core)
 #endif
 #if _M_ARM_64
 	case PowerPC::CORE_JITARM64:
-		JitArm64Tables::InitTables();
+		// The cached interpreter stands in for JitArm64 and has no tables.
 		break;
 #endif
 	case PowerPC::CORE_CACHEDINTERPRETER:
