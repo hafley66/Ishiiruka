@@ -19,13 +19,14 @@ static const ARM64Reg MEM_REG = X28; // memory base register
 static const ARM64Reg PPC_REG = X29; // ppcState pointer
 static const ARM64Reg DISPATCHER_PC = W26; // register for PC when calling the dispatcher
 
-#define PPCSTATE_OFF(elem) (offsetof(PowerPC::PowerPCState, elem))
+// offsetof rejects runtime array indices (gpr[preg], cr_val[crf]); pointer difference accepts them.
+#define PPCSTATE_OFF(elem) ((s64)&PowerPC::ppcState.elem - (s64)&PowerPC::ppcState)
 
 // Some asserts to make sure we will be able to load everything
-static_assert(PPCSTATE_OFF(spr[1023]) <= 16380, "LDR(32bit) can't reach the last SPR");
-static_assert((PPCSTATE_OFF(ps[0][0]) % 8) == 0, "LDR(64bit VFP) requires FPRs to be 8 byte aligned");
-static_assert(PPCSTATE_OFF(xer_ca) < 4096, "STRB can't store xer_ca!");
-static_assert(PPCSTATE_OFF(xer_so_ov) < 4096, "STRB can't store xer_so_ov!");
+static_assert(offsetof(PowerPC::PowerPCState, spr[1023]) <= 16380, "LDR(32bit) can't reach the last SPR");
+static_assert((offsetof(PowerPC::PowerPCState, ps[0][0]) % 8) == 0, "LDR(64bit VFP) requires FPRs to be 8 byte aligned");
+static_assert(offsetof(PowerPC::PowerPCState, xer_ca) < 4096, "STRB can't store xer_ca!");
+static_assert(offsetof(PowerPC::PowerPCState, xer_so_ov) < 4096, "STRB can't store xer_so_ov!");
 
 enum RegType
 {
